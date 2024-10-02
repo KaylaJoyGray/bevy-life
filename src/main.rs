@@ -1,11 +1,14 @@
-use std::collections::HashMap;
-use std::ops::Add;
-
-use bevy::prelude::*;
-use bevy::utils::HashSet;
-use bevy_rand::plugin::EntropyPlugin;
-use bevy_rand::prelude::{GlobalEntropy, WyRand};
+use bevy::{
+    prelude::*,
+    utils::HashSet,
+};
+use bevy_rand::{
+    plugin::EntropyPlugin,
+    prelude::GlobalEntropy,
+    prelude::WyRand,  
+};
 use rand_core::RngCore;
+use std::ops::Add;
 
 const WINDOW_WIDTH: i32 = 1920;
 const WINDOW_HEIGHT: i32 = 1080;
