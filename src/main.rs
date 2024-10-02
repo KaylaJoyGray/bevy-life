@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::Range;
 
 use bevy::prelude::*;
 use bevy_rand::plugin::EntropyPlugin;
@@ -50,8 +49,8 @@ impl Field {
     }
 
     pub fn get(&self, point: Point) -> Option<Entity> {
-        if let Some(entref) = self.cells.get(&point) {
-            Some(*entref)
+        if let Some(e) = self.cells.get(&point) {
+            Some(*e)
         } else {
             None
         }
