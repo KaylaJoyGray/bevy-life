@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Add;
 
 use bevy::prelude::*;
 use bevy_rand::plugin::EntropyPlugin;
@@ -9,10 +10,72 @@ const WINDOW_WIDTH: i32 = 1920;
 const WINDOW_HEIGHT: i32 = 1080;
 const RANDOM_SEED: u64 = 42;
 
+const NEIGHBOR_COORDINATES_8: [Point; 8] = [
+    // Left
+    Point {
+        x: 1,
+        y: 0,
+    },
+    // Top Left
+    Point {
+        x: -1,
+        y: 1,
+    },
+    // Top
+    Point {
+        x: 0,
+        y: 1,
+    },
+    // Top Right
+    Point {
+        x: 1,
+        y: 1,
+    },
+    // Right
+    Point {
+        x: 1,
+        y: 0,
+    },
+    // Bottom Right
+    Point {
+        x: 1,
+        y: -1,
+    },
+    // Bottom
+    Point {
+        x: 0,
+        y: -1,
+    },
+    // Bottom Left
+    Point {
+        x: -1,
+        y: -1,
+    },
+];
+
 #[derive(Component, Copy, Clone, Eq, Hash, PartialEq)]
 struct Point {
     pub x: i32,
     pub y: i32,
+}
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl Point {
+    fn neighbors(&self) -> Vec<Point> {
+        NEIGHBOR_COORDINATES_8.map(|p| {
+            *self + p
+        }).into_iter().collect()
+    }
 }
 
 #[derive(Component)]
@@ -85,6 +148,10 @@ fn map_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>)
     });
 
     info!("Mapped cells!");
+}
+
+fn update_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>, field: ResMut<Field>) {
+
 }
 
 fn spawn_camera(mut commands: Commands) {
