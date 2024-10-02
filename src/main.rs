@@ -79,9 +79,10 @@ impl Point {
 }
 
 #[derive(Component)]
-struct Cell {
-    alive: bool,
-}
+struct Cell {}
+
+#[derive(Component)]
+struct Alive {}
 
 #[derive(Bundle)]
 struct CellBundle {
@@ -127,9 +128,7 @@ fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand
         let x = i % WINDOW_WIDTH;
         let y = (i - x) / WINDOW_WIDTH;
         CellBundle {
-            cell: Cell {
-                alive: true
-            },
+            cell: Cell {},
             point: Point {
                 x,
                 y,
@@ -154,7 +153,39 @@ fn map_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>)
     info!("Mapped cells!");
 }
 
-fn update_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>, field: ResMut<Field>) {}
+fn update_cells(mut commands: Commands,
+                cells: Query<(Entity, &Point), With<Cell>>,
+                live_cells: Query<(Entity, &Point), (With<Cell>, With<Alive>)>,
+                field: ResMut<Field>) {
+    cells.iter().for_each(|(e, p)| {
+        let neighbors = p.neighbors().iter().filter(|&&n| {
+            if let Some(n_e) = field.get(n) {
+                if live_cells.iter().find(|(e, _p)| {
+                    *e == n_e
+                }).is_some() {
+                    true;
+                }
+            }
+            false
+        }).count();
+
+        match neighbors {
+            0..2 => {
+                commands.entity(e).remove::<Alive>();
+            }
+            2..3 => {
+                // We're alive!
+            }
+            3 => {
+                commands.entity(e).insert(Alive {});
+            }
+            4..=8 => {
+                commands.entity(e).remove::<Alive>();
+            }
+            _ => {}
+        }
+    });
+}
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((Camera2dBundle::default(), IsDefaultUiCamera));
@@ -173,5 +204,6 @@ fn main() {
         .add_plugins(EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED.to_ne_bytes()))
         .insert_resource(ClearColor(Color::WHITE))
         .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells)))
+        .add_systems(FixedUpdate, update_cells)
         .run();
 }
