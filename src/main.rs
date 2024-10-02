@@ -91,6 +91,11 @@ struct CellBundle {
 }
 
 #[derive(Resource)]
+struct Generation {
+    count: i32,
+}
+
+#[derive(Resource)]
 struct Field {
     width: i32,
     height: i32,
@@ -168,7 +173,8 @@ fn randomize_cells(mut commands: Commands,
 fn update_cells(mut commands: Commands,
                 cells: Query<(Entity, &Point), With<Cell>>,
                 live_cells: Query<(Entity, &Point), (With<Cell>, With<Alive>)>,
-                field: ResMut<Field>) {
+                field: Res<Field>,
+                mut generation: ResMut<Generation>) {
     cells.iter().for_each(|(e, p)| {
         let neighbors = p.neighbors().iter().filter(|&&n| {
             if let Some(n_e) = field.get(n) {
@@ -197,6 +203,9 @@ fn update_cells(mut commands: Commands,
             _ => {}
         }
     });
+    
+    generation.count += 1;
+    info!("Generation {} passed!", generation.count);
 }
 
 fn spawn_camera(mut commands: Commands) {
@@ -215,6 +224,7 @@ fn main() {
         }))
         .add_plugins(EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED.to_ne_bytes()))
         .insert_resource(ClearColor(Color::WHITE))
+        .insert_resource(Generation { count: 0 })
         .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells), randomize_cells.after(map_cells)))
         .add_systems(FixedUpdate, update_cells)
         .run();
