@@ -123,8 +123,8 @@ impl Field {
     }
 }
 
-fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand>>) {
-    let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).filter(|_| { rng.next_u32() % 7 == 0 }).map(|i| {
+fn initialize_cells(mut commands: Commands) {
+    let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).map(|i| {
         let x = i % WINDOW_WIDTH;
         let y = (i - x) / WINDOW_WIDTH;
         CellBundle {
