@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ops::Add;
 
 use bevy::prelude::*;
+use bevy::utils::HashSet;
 use bevy_rand::plugin::EntropyPlugin;
 use bevy_rand::prelude::{GlobalEntropy, WyRand};
 use rand_core::RngCore;
@@ -99,7 +100,7 @@ struct Generation {
 struct Field {
     width: i32,
     height: i32,
-    cells: HashMap<Point, Entity>,
+    cells: HashSet<Point>,
 }
 
 impl Field {
@@ -107,23 +108,23 @@ impl Field {
         Self {
             width,
             height,
-            cells: HashMap::new(),
+            cells: HashSet::new(),
         }
     }
 
-    pub fn insert(&mut self, point: Point, entity: Entity) {
+    pub fn insert(&mut self, point: Point) {
         if point.x < self.width && point.y < self.height {
-            self.cells.insert(point, entity);
+            self.cells.insert(point);
         } else {
             warn!("Point out of bounds!")
         }
     }
 
-    pub fn get(&self, point: Point) -> Option<Entity> {
+    pub fn get(&self, point: Point) -> bool {
         if let Some(e) = self.cells.get(&point) {
-            Some(*e)
+            true
         } else {
-            None
+            false
         }
     }
 }
@@ -146,13 +147,13 @@ fn initialize_cells(mut commands: Commands) {
     info!("Spawned cells!");
 }
 
-fn map_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>) {
+fn map_cells(mut commands: Commands, cells: Query<&Point, (With<Cell>, With<Alive>)>) {
     commands.insert_resource(Field {
         width: WINDOW_WIDTH,
         height: WINDOW_HEIGHT,
-        cells: cells.iter().map(|(e, p)| {
-            (*p, e)
-        }).collect::<HashMap<Point, Entity>>(),
+        cells: cells.iter().map(|p| {
+            *p
+        }).collect::<HashSet<Point>>(),
     });
 
     info!("Mapped cells!");
@@ -172,19 +173,11 @@ fn randomize_cells(mut commands: Commands,
 
 fn update_cells(mut commands: Commands,
                 cells: Query<(Entity, &Point), With<Cell>>,
-                live_cells: Query<(Entity, &Point), (With<Cell>, With<Alive>)>,
                 field: Res<Field>,
                 mut generation: ResMut<Generation>) {
     cells.iter().for_each(|(e, p)| {
-        let neighbors = p.neighbors().iter().filter(|&&n| {
-            if let Some(n_e) = field.get(n) {
-                if live_cells.iter().find(|(e, _p)| {
-                    *e == n_e
-                }).is_some() {
-                    true;
-                }
-            }
-            false
+        let neighbors = p.neighbors().iter().filter(|&&n| { 
+            field.get(n)
         }).count();
 
         match neighbors {
@@ -203,7 +196,7 @@ fn update_cells(mut commands: Commands,
             _ => {}
         }
     });
-    
+
     generation.count += 1;
     info!("Generation {} passed!", generation.count);
 }
@@ -226,6 +219,6 @@ fn main() {
         .insert_resource(ClearColor(Color::WHITE))
         .insert_resource(Generation { count: 0 })
         .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells), randomize_cells.after(map_cells)))
-        .add_systems(FixedUpdate, update_cells)
+        .add_systems(FixedUpdate, (update_cells, map_cells.after(update_cells)))
         .run();
 }
