@@ -5,7 +5,7 @@ use bevy::{
 use bevy_rand::{
     plugin::EntropyPlugin,
     prelude::GlobalEntropy,
-    prelude::WyRand,  
+    prelude::WyRand,
 };
 use rand_core::RngCore;
 use std::ops::Add;
@@ -162,13 +162,15 @@ fn map_cells(mut commands: Commands, cells: Query<&Point, (With<Cell>, With<Aliv
     info!("Mapped cells!");
 }
 
-fn randomize_cells(mut commands: Commands,
+fn randomize_cells(par_commands: ParallelCommands,
                    mut rng: ResMut<GlobalEntropy<WyRand>>,
                    cells_query: Query<Entity, With<Cell>>) {
     cells_query.iter().filter(|_| {
         rng.next_u32() % 7 == 0
     }).for_each(|e| {
-        commands.entity(e).insert(Alive {});
+        par_commands.command_scope(|mut commands| {
+            commands.entity(e).insert(Alive {});
+        })
     });
 
     info!("Randomized cells!");
