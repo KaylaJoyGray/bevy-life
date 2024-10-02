@@ -171,27 +171,33 @@ fn randomize_cells(mut commands: Commands,
     info!("Randomized cells!");
 }
 
-fn update_cells(mut commands: Commands,
+fn update_cells(par_commands: ParallelCommands,
                 cells: Query<(Entity, &Point), With<Cell>>,
                 field: Res<Field>,
                 mut generation: ResMut<Generation>) {
-    cells.iter().for_each(|(e, p)| {
-        let neighbors = p.neighbors().iter().filter(|&&n| { 
+    cells.par_iter().for_each(|(e, p)| {
+        let neighbors = p.neighbors().iter().filter(|&&n| {
             field.get(n)
         }).count();
 
         match neighbors {
             0..2 => {
-                commands.entity(e).remove::<Alive>();
+                par_commands.command_scope(|mut commands| {
+                    commands.entity(e).remove::<Alive>();
+                })
             }
             2..3 => {
                 // We're alive!
             }
             3 => {
-                commands.entity(e).insert(Alive {});
+                par_commands.command_scope(|mut commands| {
+                    commands.entity(e).insert(Alive {});
+                })
             }
             4..=8 => {
-                commands.entity(e).remove::<Alive>();
+                par_commands.command_scope(|mut commands| {
+                    commands.entity(e).remove::<Alive>();
+                })
             }
             _ => {}
         }
