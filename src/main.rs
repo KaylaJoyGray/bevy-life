@@ -66,13 +66,13 @@ fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand
             cell: Cell {},
             point: Point {
                 x,
-                y: (i - x) / WINDOW_WIDTH,
+                y,
             },
         }
     }).collect();
 
     commands.spawn_batch(cells);
-    
+
     info!("Spawned cells!");
 }
 
