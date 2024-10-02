@@ -153,6 +153,18 @@ fn map_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>)
     info!("Mapped cells!");
 }
 
+fn randomize_cells(mut commands: Commands,
+                   mut rng: ResMut<GlobalEntropy<WyRand>>,
+                   cells_query: Query<Entity, With<Cell>>) {
+    cells_query.iter().filter(|_| {
+        rng.next_u32() % 7 == 0
+    }).for_each(|e| {
+        commands.entity(e).insert(Alive {});
+    });
+
+    info!("Randomized cells!");
+}
+
 fn update_cells(mut commands: Commands,
                 cells: Query<(Entity, &Point), With<Cell>>,
                 live_cells: Query<(Entity, &Point), (With<Cell>, With<Alive>)>,
@@ -203,7 +215,7 @@ fn main() {
         }))
         .add_plugins(EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED.to_ne_bytes()))
         .insert_resource(ClearColor(Color::WHITE))
-        .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells)))
+        .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells), randomize_cells.after(map_cells)))
         .add_systems(FixedUpdate, update_cells)
         .run();
 }
