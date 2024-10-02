@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Range;
 
 use bevy::prelude::*;
 use bevy_rand::plugin::EntropyPlugin;
@@ -60,7 +61,7 @@ impl Field {
 fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand>>) {
     let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).filter(|_| { rng.next_u32() % 7 == 0 }).map(|i| {
         let x = i % WINDOW_WIDTH;
-        let y = (i -x) / WINDOW_WIDTH;
+        let y = (i - x) / WINDOW_WIDTH;
         CellBundle {
             cell: Cell {},
             point: Point {
@@ -71,6 +72,20 @@ fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand
     }).collect();
 
     commands.spawn_batch(cells);
+    
+    info!("Spawned cells!");
+}
+
+fn map_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>) {
+    commands.insert_resource(Field {
+        width: WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+        cells: cells.iter().map(|(e, p)| {
+            (*p, e)
+        }).collect::<HashMap<Point, Entity>>(),
+    });
+
+    info!("Mapped cells!");
 }
 
 fn spawn_camera(mut commands: Commands) {
@@ -89,6 +104,6 @@ fn main() {
         }))
         .add_plugins(EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED.to_ne_bytes()))
         .insert_resource(ClearColor(Color::WHITE))
-        .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera)))
+        .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells)))
         .run();
 }
