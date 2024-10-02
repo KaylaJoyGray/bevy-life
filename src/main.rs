@@ -79,7 +79,9 @@ impl Point {
 }
 
 #[derive(Component)]
-struct Cell {}
+struct Cell {
+    alive: bool,
+}
 
 #[derive(Bundle)]
 struct CellBundle {
@@ -125,7 +127,9 @@ fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand
         let x = i % WINDOW_WIDTH;
         let y = (i - x) / WINDOW_WIDTH;
         CellBundle {
-            cell: Cell {},
+            cell: Cell {
+                alive: true
+            },
             point: Point {
                 x,
                 y,
@@ -150,9 +154,7 @@ fn map_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>)
     info!("Mapped cells!");
 }
 
-fn update_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>, field: ResMut<Field>) {
-
-}
+fn update_cells(mut commands: Commands, cells: Query<(Entity, &Point), With<Cell>>, field: ResMut<Field>) {}
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((Camera2dBundle::default(), IsDefaultUiCamera));
