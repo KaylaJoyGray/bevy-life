@@ -5,8 +5,8 @@ use bevy_rand::plugin::EntropyPlugin;
 use bevy_rand::prelude::{GlobalEntropy, WyRand};
 use rand_core::RngCore;
 
-const WINDOW_WIDTH: i32 = 600;
-const WINDOW_HEIGHT: i32 = 400;
+const WINDOW_WIDTH: i32 = 1920;
+const WINDOW_HEIGHT: i32 = 1080;
 const RANDOM_SEED: u64 = 42;
 
 #[derive(Component, Copy, Clone, Eq, Hash, PartialEq)]
@@ -22,7 +22,6 @@ struct Cell {}
 struct CellBundle {
     cell: Cell,
     point: Point,
-    node: NodeBundle,
 }
 
 #[derive(Resource)]
@@ -59,8 +58,6 @@ impl Field {
 }
 
 fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand>>) {
-    let mut field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
-
     let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).filter(|_| { rng.next_u32() % 7 == 0 }).map(|i| {
         let x = i % WINDOW_WIDTH;
         let y = (i -x) / WINDOW_WIDTH;
@@ -70,24 +67,10 @@ fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand
                 x,
                 y: (i - x) / WINDOW_WIDTH,
             },
-            node: NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    left: Val::Px(x as f32),
-                    top: Val::Px(y as f32),
-                    width: Val::Px(1.0),
-                    height: Val::Px(1.0),
-                    ..default()
-                },
-                background_color: BackgroundColor(Color::BLACK),
-                ..default()
-            },
         }
     }).collect();
-    
-    commands.spawn_batch(cells);
 
-    commands.insert_resource(field);
+    commands.spawn_batch(cells);
 }
 
 fn spawn_camera(mut commands: Commands) {
