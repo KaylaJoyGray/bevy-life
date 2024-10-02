@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bevy::prelude::*;
 use bevy_rand::plugin::EntropyPlugin;
 use bevy_rand::prelude::{GlobalEntropy, WyRand};
@@ -7,22 +9,27 @@ const WINDOW_WIDTH: i32 = 600;
 const WINDOW_HEIGHT: i32 = 400;
 const RANDOM_SEED: u64 = 42;
 
-#[derive(Component)]
+#[derive(Component, Copy, Clone, Eq, Hash, PartialEq)]
 struct Point {
     pub x: i32,
     pub y: i32,
 }
 
 #[derive(Component)]
-struct Cell {
-    alive: bool,
+struct Cell {}
+
+#[derive(Bundle)]
+struct CellBundle {
+    cell: Cell,
+    point: Point,
+    node: NodeBundle,
 }
 
 #[derive(Resource)]
 struct Field {
     width: i32,
     height: i32,
-    cells: Vec<Option<Entity>>,
+    cells: HashMap<Point, Entity>,
 }
 
 impl Field {
@@ -30,58 +37,57 @@ impl Field {
         Self {
             width,
             height,
-            cells: vec![None; (width * height) as usize],
+            cells: HashMap::new(),
         }
     }
 
     pub fn insert(&mut self, point: Point, entity: Entity) {
-        let ind = (point.y * self.width) + point.x;
-        if ind < self.width * self.height {
-            self.cells.insert(ind as usize, Some(entity));
+        if point.x < self.width && point.y < self.height {
+            self.cells.insert(point, entity);
         } else {
             warn!("Point out of bounds!")
         }
     }
 
     pub fn get(&self, point: Point) -> Option<Entity> {
-        let ind = (point.y * self.width) + point.x;
-        if ind < self.width * self.height {
-            self.cells[ind as usize]
+        if let Some(entref) = self.cells.get(&point) {
+            Some(*entref)
         } else {
-            warn!("Point out of bounds!");
             None
         }
     }
 }
 
 fn initialize_cells(mut commands: Commands, mut rng: ResMut<GlobalEntropy<WyRand>>) {
-   let mut field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
-    for x in 0..(WINDOW_WIDTH - 1) {
-        for y in 0..(WINDOW_HEIGHT - 1) {
-            info!("Spawning cell at {}, {}", x, y);
-            let alive = if rng.next_u32() % 7 == 0 { true } else { false };
-            field.insert(Point { x, y },
-                         commands.spawn(
-                             Point { x, y })
-                             .insert(Cell {
-                                 alive
-                             })
-                             .insert(NodeBundle {
-                                 style: Style {
-                                     position_type: PositionType::Absolute,
-                                     left: Val::Px(x as f32),
-                                     top: Val::Px(y as f32),
-                                     width: Val::Px(1.0),
-                                     height: Val::Px(1.0),
-                                     ..default()
-                                 },
-                                 background_color: BackgroundColor(Color::BLACK),
-                                 visibility: if alive { Visibility::Visible } else { Visibility::Hidden },
-                                 ..default()
-                             })
-                             .id());
+    let mut field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).filter(|_| { rng.next_u32() % 7 == 0 }).map(|i| {
+        let x = i % WINDOW_WIDTH;
+        let y = (i -x) / WINDOW_WIDTH;
+        CellBundle {
+            cell: Cell {},
+            point: Point {
+                x,
+                y: (i - x) / WINDOW_WIDTH,
+            },
+            node: NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    left: Val::Px(x as f32),
+                    top: Val::Px(y as f32),
+                    width: Val::Px(1.0),
+                    height: Val::Px(1.0),
+                    ..default()
+                },
+                background_color: BackgroundColor(Color::BLACK),
+                ..default()
+            },
         }
-    }    commands.insert_resource(field);
+    }).collect();
+    
+    commands.spawn_batch(cells);
+
+    commands.insert_resource(field);
 }
 
 fn spawn_camera(mut commands: Commands) {
