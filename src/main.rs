@@ -1,3 +1,4 @@
+use std::ops::Add;
 use bevy::{
     prelude::*,
     utils::HashSet,
@@ -8,7 +9,6 @@ use bevy_rand::{
     prelude::WyRand,
 };
 use rand_core::RngCore;
-use std::ops::Add;
 
 const WINDOW_WIDTH: i32 = 1920;
 const WINDOW_HEIGHT: i32 = 1080;
@@ -57,7 +57,7 @@ const NEIGHBOR_COORDINATES_8: [Point; 8] = [
     },
 ];
 
-#[derive(Component, Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Component, Copy, Clone, Eq, Hash, PartialEq, Default)]
 struct Point {
     pub x: i32,
     pub y: i32,
@@ -83,14 +83,13 @@ impl Point {
 }
 
 #[derive(Component)]
-struct Cell {}
-
-#[derive(Component)]
-struct Alive {}
+struct CellState {
+    alive: bool,
+}
 
 #[derive(Bundle)]
 struct CellBundle {
-    cell: Cell,
+    cell: CellState,
     point: Point,
 }
 
@@ -137,7 +136,9 @@ fn initialize_cells(mut commands: Commands) {
         let x = i % WINDOW_WIDTH;
         let y = (i - x) / WINDOW_WIDTH;
         CellBundle {
-            cell: Cell {},
+            cell: CellState {
+                alive: true,
+            },
             point: Point {
                 x,
                 y,
@@ -150,62 +151,30 @@ fn initialize_cells(mut commands: Commands) {
     info!("Spawned cells!");
 }
 
-fn map_cells(mut commands: Commands, cells: Query<&Point, (With<Cell>, With<Alive>)>) {
-    commands.insert_resource(Field {
-        width: WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-        cells: cells.iter().map(|p| {
-            *p
-        }).collect::<HashSet<Point>>(),
-    });
-
-    info!("Mapped cells!");
+fn map_cells(cells: Query<(&Point, &CellState)>,
+             field: Option<ResMut<Field>>) {
+    todo!()
 }
 
-fn randomize_cells(par_commands: ParallelCommands,
-                   mut rng: ResMut<GlobalEntropy<WyRand>>,
-                   cells_query: Query<Entity, With<Cell>>) {
-    cells_query.iter().filter(|_| {
+fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Query<&mut CellState>) {
+    cells_query.iter_mut().filter(|_| {
         rng.next_u32() % 7 == 0
-    }).for_each(|e| {
-        par_commands.command_scope(|mut commands| {
-            commands.entity(e).insert(Alive {});
-        })
+    }).for_each(|mut c| {
+        c.alive = true;
     });
 
     info!("Randomized cells!");
 }
 
-fn update_cells(par_commands: ParallelCommands,
-                cells: Query<(Entity, &Point), With<Cell>>,
+fn update_cells(mut cells: Query<(Entity, &Point, &mut CellState)>,
                 field: Res<Field>,
                 mut generation: ResMut<Generation>) {
-    cells.par_iter().for_each(|(e, p)| {
+    cells.par_iter_mut().for_each(|(e, p, mut c)| {
         let neighbors = p.neighbors().iter().filter(|&&n| {
             field.get(n)
         }).count();
-
-        match neighbors {
-            0..2 => {
-                par_commands.command_scope(|mut commands| {
-                    commands.entity(e).remove::<Alive>();
-                })
-            }
-            2..3 => {
-                // We're alive!
-            }
-            3 => {
-                par_commands.command_scope(|mut commands| {
-                    commands.entity(e).insert(Alive {});
-                })
-            }
-            4..=8 => {
-                par_commands.command_scope(|mut commands| {
-                    commands.entity(e).remove::<Alive>();
-                })
-            }
-            _ => {}
-        }
+        
+        c.alive = matches!(neighbors, 2|3);
     });
 
     generation.count += 1;
@@ -230,6 +199,6 @@ fn main() {
         .insert_resource(ClearColor(Color::WHITE))
         .insert_resource(Generation { count: 0 })
         .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells), randomize_cells.after(map_cells)))
-        .add_systems(FixedUpdate, (update_cells, map_cells.after(update_cells)))
+        .add_systems(FixedUpdate, (update_cells, /*map_cells.after(update_cells)*/))
         .run();
 }
