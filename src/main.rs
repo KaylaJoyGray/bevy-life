@@ -101,7 +101,7 @@ struct Generation {
 struct Field {
     width: usize,
     height: usize,
-    cells: Vec<u64>,
+    cells: Vec<bool>,
 }
 
 impl Field {
@@ -109,16 +109,14 @@ impl Field {
         Self {
             width,
             height,
-            cells: vec![0; (width * height) / 64],
+            cells: vec![false; width * height],
         }
     }
 
     #[inline(always)]
     pub fn flip(&mut self, point: Point) {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            let offset = ((point.y * self.width as i32) + point.x) as usize;
-            let mask = 1u64 << (offset % 64);
-            self.cells[offset / 64] ^= mask;
+            self.cells[((point.y * self.width as i32) + point.x) as usize] = !self.cells[((point.y * self.width as i32) + point.x) as usize];
         } else {
             warn!("Point out of bounds!")
         }
@@ -127,9 +125,7 @@ impl Field {
     #[inline(always)]
     pub fn get(&self, point: Point) -> bool {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            let offset = ((point.y * self.width as i32) + point.x) as usize;
-            let mask = 1u64 << (offset % 64);
-            self.cells[offset / 64] & mask != 0
+            self.cells[((point.y * self.width as i32) + point.x) as usize]
         } else {
             false
         }
