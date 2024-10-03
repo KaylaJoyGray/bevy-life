@@ -1,7 +1,6 @@
 use std::ops::Add;
 use bevy::{
     prelude::*,
-    utils::HashSet,
 };
 use bevy_rand::{
     plugin::EntropyPlugin,
@@ -10,8 +9,8 @@ use bevy_rand::{
 };
 use rand_core::RngCore;
 
-const WINDOW_WIDTH: i32 = 1920;
-const WINDOW_HEIGHT: i32 = 1080;
+const WINDOW_WIDTH:  usize = 1920;
+const WINDOW_HEIGHT: usize = 1080;
 const RANDOM_SEED: u64 = 42;
 
 const NEIGHBOR_COORDINATES_8: [Point; 8] = [
@@ -100,31 +99,37 @@ struct Generation {
 
 #[derive(Resource)]
 struct Field {
-    width: i32,
-    height: i32,
-    cells: HashSet<Point>,
+    width: usize,
+    height: usize,
+    cells: Vec<u64>,
 }
 
 impl Field {
-    pub fn new(width: i32, height: i32) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         Self {
             width,
             height,
-            cells: HashSet::new(),
+            cells: vec![0; (width * height) / 64],
         }
     }
 
-    pub fn insert(&mut self, point: Point) {
-        if point.x < self.width && point.y < self.height {
-            self.cells.insert(point);
+    #[inline(always)]
+    pub fn flip(&mut self, point: Point) {
+        if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
+            let offset = ((point.y * self.width as i32) + point.x) as usize;
+            let mask = 1u64 << (offset % 64);
+            self.cells[offset / 64] ^= mask;
         } else {
             warn!("Point out of bounds!")
         }
     }
 
+    #[inline(always)]
     pub fn get(&self, point: Point) -> bool {
-        if let Some(e) = self.cells.get(&point) {
-            true
+        if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
+            let offset = ((point.y * self.width as i32) + point.x) as usize;
+            let mask = 1u64 << (offset % 64);
+            self.cells[offset / 64] & mask != 0
         } else {
             false
         }
@@ -133,8 +138,8 @@ impl Field {
 
 fn initialize_cells(mut commands: Commands) {
     let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).map(|i| {
-        let x = i % WINDOW_WIDTH;
-        let y = (i - x) / WINDOW_WIDTH;
+        let x = (i % WINDOW_WIDTH) as i32;
+        let y = ((i - x as usize) / WINDOW_WIDTH) as i32;
         CellBundle {
             cell: CellState {
                 alive: true,
@@ -151,9 +156,22 @@ fn initialize_cells(mut commands: Commands) {
     info!("Spawned cells!");
 }
 
-fn map_cells(cells: Query<(&Point, &CellState)>,
-             field: Option<ResMut<Field>>) {
-    todo!()
+fn map_cells(mut commands: Commands,
+             cells: Query<(&Point, &CellState)>) {
+    let mut field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
+    cells.iter().for_each(|(p, c)| {
+        if c.alive {
+            field.flip(*p);
+        }
+    });
+    commands.insert_resource(field);
+}
+
+fn update_map_cells(cells: Query<&Point, Changed<CellState>>,
+                    mut field: ResMut<Field>) {
+    cells.iter().for_each(|p| {
+        field.flip(*p);
+    });
 }
 
 fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Query<&mut CellState>) {
@@ -166,14 +184,14 @@ fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Quer
     info!("Randomized cells!");
 }
 
-fn update_cells(mut cells: Query<(Entity, &Point, &mut CellState)>,
+fn update_cells(mut cells: Query<( &Point, &mut CellState)>,
                 field: Res<Field>,
                 mut generation: ResMut<Generation>) {
-    cells.par_iter_mut().for_each(|(e, p, mut c)| {
+    cells.par_iter_mut().for_each(|(p, mut c)| {
         let neighbors = p.neighbors().iter().filter(|&&n| {
             field.get(n)
         }).count();
-        
+
         c.alive = matches!(neighbors, 2|3);
     });
 
@@ -199,6 +217,6 @@ fn main() {
         .insert_resource(ClearColor(Color::WHITE))
         .insert_resource(Generation { count: 0 })
         .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells), randomize_cells.after(map_cells)))
-        .add_systems(FixedUpdate, (update_cells, /*map_cells.after(update_cells)*/))
+        .add_systems(FixedUpdate, (update_cells, update_map_cells.after(update_cells)))
         .run();
 }
