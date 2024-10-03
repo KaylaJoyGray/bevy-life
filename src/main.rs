@@ -117,8 +117,6 @@ impl Field {
     pub fn flip(&mut self, point: Point) {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
             self.cells[((point.y * self.width as i32) + point.x) as usize] = !self.cells[((point.y * self.width as i32) + point.x) as usize];
-        } else {
-            warn!("Point out of bounds!")
         }
     }
 
@@ -152,6 +150,16 @@ fn initialize_cells(mut commands: Commands) {
     info!("Spawned cells!");
 }
 
+fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Query<&mut CellState>) {
+    cells_query.iter_mut().filter(|_| {
+        rng.next_u32() % 7 == 0
+    }).for_each(|mut c| {
+        c.alive = true;
+    });
+
+    info!("Randomized cells!");
+}
+
 fn map_cells(mut commands: Commands,
              cells: Query<(&Point, &CellState)>) {
     let mut field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -170,16 +178,6 @@ fn update_map_cells(cells: Query<&Point, Changed<CellState>>,
     });
 }
 
-fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Query<&mut CellState>) {
-    cells_query.iter_mut().filter(|_| {
-        rng.next_u32() % 7 == 0
-    }).for_each(|mut c| {
-        c.alive = true;
-    });
-
-    info!("Randomized cells!");
-}
-
 fn update_cells(mut cells: Query<( &Point, &mut CellState)>,
                 field: Res<Field>,
                 mut generation: ResMut<Generation>) {
@@ -192,7 +190,6 @@ fn update_cells(mut cells: Query<( &Point, &mut CellState)>,
     });
 
     generation.count += 1;
-    info!("Generation {} passed!", generation.count);
 }
 
 fn spawn_camera(mut commands: Commands) {
@@ -212,7 +209,7 @@ fn main() {
         .add_plugins(EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED.to_ne_bytes()))
         .insert_resource(ClearColor(Color::WHITE))
         .insert_resource(Generation { count: 0 })
-        .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), map_cells.after(initialize_cells), randomize_cells.after(map_cells)))
+        .add_systems(Startup, (spawn_camera, initialize_cells.after(spawn_camera), randomize_cells.after(initialize_cells), map_cells.after(randomize_cells)))
         .add_systems(FixedUpdate, (update_cells, update_map_cells.after(update_cells)))
         .run();
 }
