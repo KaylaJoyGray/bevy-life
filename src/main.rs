@@ -116,7 +116,9 @@ impl Field {
     #[inline(always)]
     pub fn flip(&mut self, point: Point) {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            self.cells[((point.y * self.width as i32) + point.x) as usize] = !self.cells[((point.y * self.width as i32) + point.x) as usize];
+            if let Some(v) = self.cells.get_mut(((point.y * self.width as i32) + point.x) as usize) {
+                *v = !*v;
+            }
         }
     }
 
