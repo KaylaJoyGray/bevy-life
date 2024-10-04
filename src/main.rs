@@ -1,4 +1,5 @@
 use std::ops::Add;
+use std::time::{Duration, Instant};
 use bevy::{
     prelude::*,
 };
@@ -74,6 +75,7 @@ impl Add for Point {
 }
 
 impl Point {
+    #[inline(always)]
     fn neighbors(&self) -> Vec<Point> {
         NEIGHBOR_COORDINATES_8.map(|p| {
             *self + p
@@ -174,15 +176,27 @@ fn map_cells(mut commands: Commands,
 }
 
 fn update_map_cells(cells: Query<&Point, Changed<CellState>>,
-                    mut field: ResMut<Field>) {
+                    mut field: ResMut<Field>,
+                    mut generation: Local<u32>,
+                    mut duration: Local<Duration>) {
+    let start = Instant::now();
+
     cells.iter().for_each(|p| {
         field.flip(*p);
     });
+
+    *duration += start.elapsed();
+    *generation += 1;
+    if *generation % 1000 == 0 {
+        info!("update_map_cells: Average time: {}ns", duration.as_nanos() / *generation as u128);
+    }
 }
 
 fn update_cells(mut cells: Query<( &Point, &mut CellState)>,
                 field: Res<Field>,
-                mut generation: ResMut<Generation>) {
+                mut generation: ResMut<Generation>,
+                mut duration: Local<Duration>) {
+    let start = Instant::now();
     cells.par_iter_mut().for_each(|(p, mut c)| {
         let neighbors = p.neighbors().iter().filter(|&&n| {
             field.get(n)
@@ -192,6 +206,10 @@ fn update_cells(mut cells: Query<( &Point, &mut CellState)>,
     });
 
     generation.count += 1;
+    *duration += start.elapsed();
+    if generation.count % 1000 == 0 {
+        info!("update_cells: Average time: {}ns", duration.as_nanos() / generation.count as u128);
+    }
 }
 
 fn spawn_camera(mut commands: Commands) {

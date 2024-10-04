@@ -1,0 +1,26 @@
+[update_map_cells: single threaded]
+2024-10-04T04:33:28.442671Z  INFO bevy_life: update_cells: Average time: 12584850ns
+2024-10-04T04:33:28.448195Z  INFO bevy_life: update_map_cells: Average time: 4800723ns
+2024-10-04T04:33:46.190822Z  INFO bevy_life: update_cells: Average time: 12257953ns
+2024-10-04T04:33:46.196050Z  INFO bevy_life: update_map_cells: Average time: 5019580ns
+2024-10-04T04:34:04.368471Z  INFO bevy_life: update_cells: Average time: 12282417ns
+2024-10-04T04:34:04.373646Z  INFO bevy_life: update_map_cells: Average time: 5114048ns
+2024-10-04T04:34:21.585861Z  INFO bevy_life: update_cells: Average time: 12067986ns
+2024-10-04T04:34:21.590689Z  INFO bevy_life: update_map_cells: Average time: 5134247ns
+2024-10-04T04:34:39.820943Z  INFO bevy_life: update_cells: Average time: 12134047ns
+2024-10-04T04:34:39.826353Z  INFO bevy_life: update_map_cells: Average time: 5168271ns
+2024-10-04T04:34:57.471322Z  INFO bevy_life: update_cells: Average time: 12096797ns
+2024-10-04T04:34:57.477497Z  INFO bevy_life: update_map_cells: Average time: 5167477ns
+2024-10-04T04:35:15.814871Z  INFO bevy_life: update_cells: Average time: 12163059ns
+2024-10-04T04:35:15.820124Z  INFO bevy_life: update_map_cells: Average time: 5176605ns
+2024-10-04T04:35:33.571637Z  INFO bevy_life: update_cells: Average time: 12136590ns
+2024-10-04T04:35:33.576338Z  INFO bevy_life: update_map_cells: Average time: 5182264ns
+2024-10-04T04:35:51.281612Z  INFO bevy_life: update_cells: Average time: 12110069ns
+2024-10-04T04:35:51.287188Z  INFO bevy_life: update_map_cells: Average time: 5186434ns
+2024-10-04T04:36:09.673709Z  INFO bevy_life: update_cells: Average time: 12152759ns
+2024-10-04T04:36:09.678773Z  INFO bevy_life: update_map_cells: Average time: 5195086ns
+2024-10-04T04:36:28.772090Z  INFO bevy_life: update_cells: Average time: 12253010ns
+2024-10-04T04:36:28.777306Z  INFO bevy_life: update_map_cells: Average time: 5205292ns
+2024-10-04T04:36:46.380566Z  INFO bevy_life: update_cells: Average time: 12221529ns
+2024-10-04T04:36:46.385362Z  INFO bevy_life: update_map_cells: Average time: 5199320ns
+
