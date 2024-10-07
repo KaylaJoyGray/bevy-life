@@ -1,4 +1,4 @@
-use bevy::prelude::Component;
+use bevy::prelude::{Component, UVec2};
 use std::ops::Add;
 
 #[derive(Component, Copy, Clone, Eq, Hash, PartialEq, Default)]
@@ -18,6 +18,12 @@ impl Add for Point {
     }
 }
 
+impl Into<UVec2> for Point {
+    fn into(self) -> UVec2 {
+        UVec2::new(self.x as u32, self.y as u32)
+    }
+}
+
 impl Point {
     #[inline(always)]
     pub fn neighbors(&self) -> Vec<Point> {
@@ -30,23 +36,23 @@ impl Point {
 const NEIGHBOR_COORDINATES_8: [Point; 8] = [
     // Left
     Point {
-        x: 1,
+        x: -1,
         y: 0,
     },
     // Top Left
     Point {
         x: -1,
-        y: 1,
+        y: -1,
     },
     // Top
     Point {
         x: 0,
-        y: 1,
+        y: -1,
     },
     // Top Right
     Point {
         x: 1,
-        y: 1,
+        y: -1,
     },
     // Right
     Point {
@@ -56,16 +62,16 @@ const NEIGHBOR_COORDINATES_8: [Point; 8] = [
     // Bottom Right
     Point {
         x: 1,
-        y: -1,
+        y: 1,
     },
     // Bottom
     Point {
         x: 0,
-        y: -1,
+        y: 1,
     },
     // Bottom Left
     Point {
         x: -1,
-        y: -1,
+        y: 1,
     },
 ];

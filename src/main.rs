@@ -4,11 +4,13 @@ use bevy_rand::{
     prelude::WyRand,
 };
 use systems::{Generation, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::rendering::RenderingPlugin;
 
 mod field;
 mod point;
 mod systems;
 mod cell;
+mod rendering;
 
 const RANDOM_SEED: u64 = 42;
 
@@ -23,9 +25,10 @@ fn main() {
             ..default()
         }))
         .add_plugins(EntropyPlugin::<WyRand>::with_seed(RANDOM_SEED.to_ne_bytes()))
-        .insert_resource(ClearColor(Color::WHITE))
+        .add_plugins(RenderingPlugin)
+        .insert_resource(Time::<Fixed>::from_hz(32.0))
         .insert_resource(Generation { count: 0 })
-        .add_systems(Startup, (systems::spawn_camera, systems::initialize_cells.after(systems::spawn_camera), systems::randomize_cells.after(systems::initialize_cells), systems::map_cells.after(systems::randomize_cells)))
+        .add_systems(Startup, (systems::initialize_cells, systems::randomize_cells.after(systems::initialize_cells), systems::map_cells.after(systems::randomize_cells)))
         .add_systems(FixedUpdate, (systems::update_cells, systems::update_map_cells.after(systems::update_cells)))
         .run();
 }

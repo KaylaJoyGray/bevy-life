@@ -1,13 +1,12 @@
 use crate::cell::{CellBundle, CellState};
 use crate::field::Field;
 use crate::point::Point;
-use bevy::log::info;
-use bevy::prelude::{Camera2dBundle, Changed, Commands, IsDefaultUiCamera, Query, Res, ResMut, Resource};
+use bevy::prelude::{Commands, Query, Res, ResMut, Resource};
 use bevy_rand::prelude::{GlobalEntropy, WyRand};
 use rand_core::RngCore;
 
-pub const WINDOW_WIDTH: usize = 1920;
-pub const WINDOW_HEIGHT: usize = 1080;
+pub const WINDOW_WIDTH: usize = 2560;
+pub const WINDOW_HEIGHT: usize = 1440;
 
 pub fn initialize_cells(mut commands: Commands) {
     let cells: Vec<CellBundle> = (0..WINDOW_WIDTH * WINDOW_HEIGHT).map(|i| {
@@ -15,7 +14,7 @@ pub fn initialize_cells(mut commands: Commands) {
         let y = ((i - x as usize) / WINDOW_WIDTH) as i32;
         CellBundle {
             cell: CellState {
-                alive: true,
+                alive: false,
             },
             point: Point {
                 x,
@@ -26,7 +25,7 @@ pub fn initialize_cells(mut commands: Commands) {
 
     commands.spawn_batch(cells);
 
-    info!("Spawned cells!");
+    // info!("Spawned cells!");
 }
 
 pub fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Query<&mut CellState>) {
@@ -36,7 +35,7 @@ pub fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: 
         c.alive = true;
     });
 
-    info!("Randomized cells!");
+    // info!("Randomized cells!");
 }
 
 pub fn map_cells(mut commands: Commands,
@@ -50,14 +49,14 @@ pub fn map_cells(mut commands: Commands,
     commands.insert_resource(field);
 }
 
-pub fn update_map_cells(cells: Query<&Point, Changed<CellState>>,
+pub fn update_map_cells(cells: Query<(&Point, &CellState)>,
                         field: ResMut<Field>,
                         /*mut generation: Local<u32>,*/
                         /*mut duration: Local<Duration>*/) {
     // let start = Instant::now();
 
-    cells.par_iter().for_each(|p| {
-        field.flip(*p);
+    cells.par_iter().for_each(|(p, s)| {
+        field.set(*p, s.alive);
     });
 
     // *duration += start.elapsed();
@@ -77,7 +76,11 @@ pub fn update_cells(mut cells: Query<(&Point, &mut CellState)>,
             field.get(n)
         }).count();
 
-        c.alive = matches!(neighbors, 2|3);
+        if c.alive {
+            c.alive = matches!(neighbors, 2|3);
+        } else {
+            c.alive = matches!(neighbors, 3);
+        }
     });
 
     generation.count += 1;
@@ -85,10 +88,6 @@ pub fn update_cells(mut cells: Query<(&Point, &mut CellState)>,
     // if generation.count % 1000 == 0 {
     //     info!("update_cells: Average time: {}ns", duration.as_nanos() / generation.count as u128);
     // }
-}
-
-pub fn spawn_camera(mut commands: Commands) {
-    commands.spawn((Camera2dBundle::default(), IsDefaultUiCamera));
 }
 
 #[derive(Resource)]

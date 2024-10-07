@@ -23,18 +23,35 @@ impl Field {
             },
         }
     }
+    
+    #[inline(always)]
+    pub fn in_bounds(&self, point: Point) -> bool {
+        point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32
+    }
+    
+    #[inline(always)]
+    fn get_index(&self, point: Point) -> usize {
+        ((point.y * self.width as i32) + point.x) as usize
+    }
 
     #[inline(always)]
     pub fn flip(&self, point: Point) {
-        if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            self.cells.get(((point.y * self.width as i32) + point.x) as usize).unwrap().fetch_not(Ordering::Relaxed);
+        if self.in_bounds(point) {
+            self.cells.get(self.get_index(point)).unwrap().fetch_not(Ordering::Relaxed);
+        }
+    }
+    
+    #[inline(always)]
+    pub fn set(&self, point: Point, value: bool) {
+        if self.in_bounds(point) {
+            self.cells[self.get_index(point)].store(value, Ordering::Relaxed);
         }
     }
 
     #[inline(always)]
     pub fn get(&self, point: Point) -> bool {
-        if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            unsafe { self.cells[((point.y * self.width as i32) + point.x) as usize].as_ptr().read() }
+        if self.in_bounds(point) {
+            self.cells[self.get_index(point)].load(Ordering::Relaxed)
         } else {
             false
         }
