@@ -1,8 +1,8 @@
 use std::ops::Add;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
-use bevy::{
-    prelude::*,
-};
+
+use bevy::prelude::*;
 use bevy_rand::{
     plugin::EntropyPlugin,
     prelude::GlobalEntropy,
@@ -10,7 +10,7 @@ use bevy_rand::{
 };
 use rand_core::RngCore;
 
-const WINDOW_WIDTH:  usize = 1920;
+const WINDOW_WIDTH: usize = 1920;
 const WINDOW_HEIGHT: usize = 1080;
 const RANDOM_SEED: u64 = 42;
 
@@ -103,7 +103,7 @@ struct Generation {
 struct Field {
     width: usize,
     height: usize,
-    cells: Vec<bool>,
+    cells: Vec<AtomicBool>,
 }
 
 impl Field {
@@ -111,23 +111,27 @@ impl Field {
         Self {
             width,
             height,
-            cells: vec![false; width * height],
+            cells: {
+                let mut v = Vec::new();
+                for _ in 0..width * height {
+                    v.push(AtomicBool::new(false));
+                }
+                v
+            },
         }
     }
 
     #[inline(always)]
-    pub fn flip(&mut self, point: Point) {
+    pub fn flip(&self, point: Point) {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            if let Some(v) = self.cells.get_mut(((point.y * self.width as i32) + point.x) as usize) {
-                *v = !*v;
-            }
-        }
+            self.cells.get(((point.y * self.width as i32) + point.x) as usize).unwrap().fetch_not(Ordering::Relaxed);
+        }    
     }
 
     #[inline(always)]
     pub fn get(&self, point: Point) -> bool {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
-            self.cells[((point.y * self.width as i32) + point.x) as usize]
+            unsafe { self.cells[((point.y * self.width as i32) + point.x) as usize].as_ptr().read() }
         } else {
             false
         }
@@ -166,7 +170,7 @@ fn randomize_cells(mut rng: ResMut<GlobalEntropy<WyRand>>, mut cells_query: Quer
 
 fn map_cells(mut commands: Commands,
              cells: Query<(&Point, &CellState)>) {
-    let mut field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
+    let field = Field::new(WINDOW_WIDTH, WINDOW_HEIGHT);
     cells.iter().for_each(|(p, c)| {
         if c.alive {
             field.flip(*p);
@@ -176,12 +180,12 @@ fn map_cells(mut commands: Commands,
 }
 
 fn update_map_cells(cells: Query<&Point, Changed<CellState>>,
-                    mut field: ResMut<Field>,
+                    field: ResMut<Field>,
                     mut generation: Local<u32>,
                     mut duration: Local<Duration>) {
     let start = Instant::now();
 
-    cells.iter().for_each(|p| {
+    cells.par_iter().for_each(|p| {
         field.flip(*p);
     });
 
@@ -192,7 +196,7 @@ fn update_map_cells(cells: Query<&Point, Changed<CellState>>,
     }
 }
 
-fn update_cells(mut cells: Query<( &Point, &mut CellState)>,
+fn update_cells(mut cells: Query<(&Point, &mut CellState)>,
                 field: Res<Field>,
                 mut generation: ResMut<Generation>,
                 mut duration: Local<Duration>) {
