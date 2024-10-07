@@ -24,7 +24,7 @@ fn update_buffer(mut buffer: QueryPixelBuffer,
     let mut frame = buffer.frame();
 
     frame.per_pixel_par(|vec, _pixel| {
-        if field.get(Point { x: vec.x as i32, y: vec.y as i32 }) {
+        if field.get(Point::from(vec)) {
             Pixel::WHITE
         } else {
             Pixel::BLACK

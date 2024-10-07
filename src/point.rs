@@ -18,9 +18,9 @@ impl Add for Point {
     }
 }
 
-impl Into<UVec2> for Point {
-    fn into(self) -> UVec2 {
-        UVec2::new(self.x as u32, self.y as u32)
+impl From<UVec2> for Point {
+    fn from(value: UVec2) -> Self {
+        Point {x: value.x as i32, y: value.y as i32 }
     }
 }
 
