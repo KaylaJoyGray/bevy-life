@@ -1,11 +1,10 @@
-use bevy::prelude::{Camera2dBundle, Changed, Commands, IsDefaultUiCamera, Query, Res, ResMut, Resource};
-use bevy::log::info;
-use bevy_rand::prelude::{GlobalEntropy, WyRand};
-use rand_core::RngCore;
-use crate::cell::CellBundle;
-use crate::cell::CellState;
+use crate::cell::{CellBundle, CellState};
 use crate::field::Field;
 use crate::point::Point;
+use bevy::log::info;
+use bevy::prelude::{Camera2dBundle, Changed, Commands, IsDefaultUiCamera, Query, Res, ResMut, Resource};
+use bevy_rand::prelude::{GlobalEntropy, WyRand};
+use rand_core::RngCore;
 
 pub const WINDOW_WIDTH: usize = 1920;
 pub const WINDOW_HEIGHT: usize = 1080;

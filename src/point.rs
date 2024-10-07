@@ -1,5 +1,5 @@
-use std::ops::Add;
 use bevy::prelude::Component;
+use std::ops::Add;
 
 #[derive(Component, Copy, Clone, Eq, Hash, PartialEq, Default)]
 pub struct Point {

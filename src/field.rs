@@ -1,6 +1,6 @@
+use crate::point::Point;
 use bevy::prelude::Resource;
 use std::sync::atomic::{AtomicBool, Ordering};
-use crate::point::Point;
 
 #[derive(Resource)]
 pub struct Field {
@@ -28,7 +28,7 @@ impl Field {
     pub fn flip(&self, point: Point) {
         if point.x >= 0 && point.x < self.width as i32 && point.y >= 0 && point.y < self.height as i32 {
             self.cells.get(((point.y * self.width as i32) + point.x) as usize).unwrap().fetch_not(Ordering::Relaxed);
-        }    
+        }
     }
 
     #[inline(always)]

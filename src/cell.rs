@@ -1,5 +1,5 @@
-use bevy::prelude::{Bundle, Component};
 use crate::point::Point;
+use bevy::prelude::{Bundle, Component};
 
 #[derive(Component)]
 pub struct CellState {
